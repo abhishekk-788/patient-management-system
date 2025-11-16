@@ -1,0 +1,12 @@
+### PUT request to update patient
+PUT http://localhost:4000/patient/ed255906-e58d-4c99-b44c-db26c2f26595
+Content-Type: application/json
+
+{
+  "name": "Abhishek Kumar",
+  "email": "abhishek1401@gmail.com",
+  "address": "123 main street",
+  "dateOfBirth": "2000-01-14"
+}
+
+###

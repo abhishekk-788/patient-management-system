@@ -1,0 +1,12 @@
+### POST request to create patient
+POST http://localhost:4000/patient
+Content-Type: application/json
+
+{
+  "name": "Abhishek Kumar",
+  "email": "abhishek@gmail.com",
+  "address": "123 main street",
+  "dateOfBirth": "2000-01-14",
+  "registrationDate": "2025-11-16"
+}
+###
