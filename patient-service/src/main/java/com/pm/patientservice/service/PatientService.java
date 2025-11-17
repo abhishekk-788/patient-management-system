@@ -4,6 +4,7 @@ import com.pm.patientservice.dto.PatientRequestDTO;
 import com.pm.patientservice.dto.PatientResponseDTO;
 import com.pm.patientservice.exception.EmailAlreadyExistException;
 import com.pm.patientservice.exception.PatientNotFoundException;
+import com.pm.patientservice.grpc.BillingServiceGrpcClient;
 import com.pm.patientservice.mapper.PatientMapper;
 import com.pm.patientservice.model.Patient;
 import com.pm.patientservice.repository.PatientRepository;
@@ -19,11 +20,41 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+/*
+ * @Service tells Spring Boot:
+ *   - Create an object (Bean) of this class.
+ *   - Manage its lifecycle.
+ *   - Inject required dependencies into its constructor.
+ *
+ * This means you NEVER manually write:
+ *     new PatientService(...)
+ *
+ * Instead, Spring automatically creates:
+ *     PatientService serviceBean = new PatientService(repositoryBean)
+ *
+ * This automatic object creation is called DEPENDENCY INJECTION,
+ * managed by Spring's IoC (Inversion of Control) Container.
+ */
 public class PatientService {
     private final PatientRepository patientRepository;
+    private final BillingServiceGrpcClient billingServiceClient;
 
-    public PatientService(PatientRepository patientRepository) {
+    /*
+     * CONSTRUCTOR INJECTION:
+     * Spring Boot automatically calls this constructor and passes
+     * the PatientRepository Bean into it.
+     *
+     * You do NOT need to create PatientRepository manually.
+     * Spring creates it because the interface is marked with @Repository.
+     *
+     * This makes:
+     *    - Testing easier
+     *    - Code cleaner
+     *    - Dependencies visible
+     */
+    public PatientService(PatientRepository patientRepository, BillingServiceGrpcClient billingServiceClient) {
         this.patientRepository = patientRepository;
+        this.billingServiceClient = billingServiceClient;
     }
 
     public List<PatientResponseDTO> getAllPatients() {
@@ -36,16 +67,30 @@ public class PatientService {
         return patientResponseDTOS;
     }
 
+    /*
+     * CREATE PATIENT:
+     * - Checks if email already exists (to avoid duplicates)
+     * - Converts DTO -> Entity
+     * - Saves entity into DB
+     * - Converts Entity -> ResponseDTO
+     */
     public PatientResponseDTO createPatient(PatientRequestDTO patientRequestDTO) {
         if(patientRepository.existsByEmail(patientRequestDTO.getEmail())) {
             throw new EmailAlreadyExistException("Email already exists");
         }
         Patient newPatient = patientRepository.save(PatientMapper.toPatient(patientRequestDTO));
+        billingServiceClient.createBillingAccount(newPatient.getId().toString(), newPatient.getName(), newPatient.getEmail());
 
         return PatientMapper.toPatientResponseDTO(newPatient);
     }
 
     @Transactional
+    /*
+     * @Transactional means:
+     *   - All DB operations in this method will run in ONE transaction.
+     *   - If any exception happens, everything is rolled back.
+     *   - Ensures data consistency during updates.
+     */
     public PatientResponseDTO updatePatient(UUID id, PatientRequestDTO patientRequestDTO) {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new PatientNotFoundException("Patient not found with id: " + id));
