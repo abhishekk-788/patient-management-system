@@ -3,10 +3,10 @@ POST http://localhost:4000/patient
 Content-Type: application/json
 
 {
-  "name": "Vivek Kumar",
-  "email": "vivek@gmail.com",
+  "name": "Rohit Kumar",
+  "email": "rohit@gmail.com",
   "address": "123 main street",
-  "dateOfBirth": "2000-06-21",
+  "dateOfBirth": "2000-10-15",
   "registrationDate": "2025-11-17"
 }
 ###
